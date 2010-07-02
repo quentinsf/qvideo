@@ -1,0 +1,106 @@
+<?php 
+// An input filter which expands the [qvideo] tag into appropriate code
+
+/*
+ * Implementation of hook_help().
+ */
+
+function qvideo_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#qvideo':
+        $output = '<p>'. 
+          t("This filter allows you to insert video clips into a page, as HTML5 with fallback to Flash.").
+          t("Here is an example: [qvideo 640 480 video.mp4 video.ogv video.flv].</p>");
+    return $output;
+  }
+}
+ 
+
+function qvideo_filter($op, $delta = 0, $format = -1, $text = ''){
+    switch($op){
+        case 'list':
+            return array(
+                0 => t('Qvideo HTML5 video macro')
+                );     
+        case 'description':
+            return t('Enables users to add HTML5-compatible video with Flash fallback by typing<br /> [qvideo width height posterurl videourl1 videourl2 flashvideourl].');
+        case 'settings':
+            // No settings interface for this filter
+            break;
+        case 'no cache':
+            // It's OK to cache this filter's output
+            return TRUE;
+        case 'prepare':
+            // No preparation yet
+            return $text;
+        case 'process':
+            return preg_replace_callback("|\[qvideo\s*(\d+)\s*(\d+)\s*(\S+)\s+(.*)\]|i",
+                'qvideo_expand', $text);
+        default:
+            return $text;
+    }
+}
+
+function video_mimetype($path) {
+    // There must be a better way...
+    // Return MIME type based on extension of $path
+    $mimetypes = array(
+        "mpeg"=>   "video/mpeg",
+        "mpg" =>   "video/mpeg",
+        "mov" =>   "video/quicktime",
+        "mp4" =>   "video/mp4",
+        "qt"  =>   "video/quicktime",
+        "ogv" =>   "video/ogg",
+        "flv" =>   "video/x-flv",
+        "m4v" =>   "video/x-m4v",
+        );
+    $ext = pathinfo($path, PATHINFO_EXTENSION);
+    $mtype = "";
+    if (array_key_exists($ext, $mimetypes)) {
+        $mtype = $mimetypes[$ext];
+    } 
+    return $mtype;
+}
+
+function qvideo_expand($matches) {
+    $width = $matches[1];
+    $height = $matches[2];
+    $poster = $matches[3];
+    $files = split(" ", $matches[4]);
+    $numfiles = count($files);
+    $htmlfiles = array_slice($files, 0, -1);
+    $flashfile = $files[$numfiles-1];
+    $flashplayer = '/files/flvplayer.swf';
+        
+    $result = "
+    <video width=\"$width\" height=\"$height\" controls preload=\"none\">
+	    <!-- MP4 must be first for iPad! -->
+	";
+    foreach ($htmlfiles as $vfile) {
+        
+        $result .= "<source src=\"" . $vfile . "\"  type=\"" . video_mimetype($vfile) . "\" />\n";
+    };
+    $result .= '
+     <!-- fallback to Flash: -->
+     <object width="' . $width . '" height="' . (string)($height + 24) . '" type="application/x-shockwave-flash" data="' . $flashplayer . '">
+      <!-- Firefox uses the `data` attribute above, IE/Safari uses the param below -->
+      <param name="movie" value="' . $flashfile .'" />
+      <param name="flashvars" value="image=' . $poster . '&amp;file='. $flashfile .'" />
+      <!-- fallback image. note the title field below, put the title of the video there -->
+      <img src="' .$poster .'" width="' . $width . '" height="' . $height . '" alt="Fallback options"
+           title="No video playback capabilities, please download the video below" />
+     </object>
+    </video>
+    ';
+    $result .='
+      <!-- you *must* offer a download link as they may be able to play the file locally. customise this bit all you want -->
+        <p>  <strong>Download Video:</strong>
+        <ul>
+    ';
+    foreach ($htmlfiles as $vfile) {
+        $result .= '<li><a href="' . $vfile . '">' . video_mimetype($vfile) . "</a></li>\n";
+    };
+
+    $result .="</ul>\n";
+    return $result;
+}

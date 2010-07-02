@@ -1,0 +1,7 @@
+name = "Qvideo"
+description = "An input filter that makes it easy to insert HTML5 video clips inline with fallback to Flash."
+core = "6.x"
+version = "6.x-1.0"
+core = "6.x"
+package = "Quentin's Tools"
+
