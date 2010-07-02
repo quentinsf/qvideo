@@ -10,11 +10,30 @@ function qvideo_help($path, $arg) {
     case 'admin/help#qvideo':
         $output = '<p>'. 
           t("This filter allows you to insert video clips into a page, as HTML5 with fallback to Flash.").
-          t("Here is an example: [qvideo 640 480 video.mp4 video.ogv video.flv].</p>");
+          t("Here is an example: [qvideo 640 480 video.jpg video.mp4 video.ogv video.flv].</p>");
     return $output;
   }
 }
- 
+
+function qvideo_filter_tips($delta, $format, $long=FALSE) {
+    if ($long) {
+        return t("The Qvideo filter allows you to insert video clips into a page using standard HTML5 tags, with fallback to a Flash player.<br/><br/>
+          Under 'Site Configuration', create an input format which includes the Qvideo macro, or add it to one of your existing ones.<br/><br/>
+          
+          To insert a video, upload a couple of versions, e.g. as file attachments to a node - it's worth having .mp4 and .ogv formats at least, 
+          a 'poster' image to be displayed before the movie loads, and a version playable by a Flash player - typically a .flv file.<br/><br/>
+
+          Then make sure you've selected the appropriate input format for your body text and put, for example:<br/><br/>
+          
+          [qvideo 640 480 /files/videoposter.jpg /files/video.mp4 /files/video.ogv /files/video.flv]<br/><br/>
+          
+          At present the module assumes you are using the JW PLayer from http://www.longtailvideo.com.  
+          You can specify, in the configuration of the input format, where this can be found on your site.
+          ");
+    } else {
+        return t('Use the [qvideo] tag to put HTML5 video into your content with a Flash player fallback.');
+    }
+}
 
 function qvideo_filter($op, $delta = 0, $format = -1, $text = ''){
     switch($op){
@@ -23,9 +42,9 @@ function qvideo_filter($op, $delta = 0, $format = -1, $text = ''){
                 0 => t('Qvideo HTML5 video macro')
                 );     
         case 'description':
-            return t('Enables users to add HTML5-compatible video with Flash fallback by typing<br /> [qvideo width height posterurl videourl1 videourl2 flashvideourl].');
+            return t('Enables users to add HTML5-compatible video with Flash fallback by typing<br /> [qvideo width height posterurl videourl1 videourl2... flashvideourl].');
         case 'settings':
-            // No settings interface for this filter
+            return _qvideo_settings();
             break;
         case 'no cache':
             // It's OK to cache this filter's output
@@ -41,7 +60,7 @@ function qvideo_filter($op, $delta = 0, $format = -1, $text = ''){
     }
 }
 
-function video_mimetype($path) {
+function _video_mimetype($path) {
     // There must be a better way...
     // Return MIME type based on extension of $path
     $mimetypes = array(
@@ -62,6 +81,25 @@ function video_mimetype($path) {
     return $mtype;
 }
 
+function _qvideo_settings() {
+  $form['filter_qvideo'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Qvideo filter'),
+    '#collapsible' => TRUE,
+  );
+  $form['filter_qvideo']["flash_player_location"] = array(
+    '#type' => 'textfield',
+    '#title' => t('Location of the core JW Player'),
+    '#default_value' => variable_get("flash_player_location", '/files/flvplayer.swf'),
+    '#size' => 64,
+    '#maxlength' => 1024,
+    '#description' => t(
+        'JW Player can be downloaded from http://www.longtailvideo.com, and the core of it is a single file called flvplayer.swf.
+        Where can this be found on your site?'),
+  );
+  return $form;
+}
+
 function qvideo_expand($matches) {
     if (count($matches) < 5) {
         return "<b>Invalid syntax for qvideo tag</b>";
@@ -76,7 +114,7 @@ function qvideo_expand($matches) {
     }
     $htmlfiles = array_slice($files, 0, -1);
     $flashfile = $files[$numfiles-1];
-    $flashplayer = '/files/flvplayer.swf';
+    $flashplayer = variable_get("flash_player_location", '/files/flvplayer.swf');
     
     $isiPad = (bool) strpos($_SERVER['HTTP_USER_AGENT'],'iPad');
     
@@ -86,7 +124,7 @@ function qvideo_expand($matches) {
     $result .= '>';
     foreach ($htmlfiles as $vfile) {
         
-        $result .= "<source src=\"" . $vfile . "\"  type=\"" . video_mimetype($vfile) . "\" />\n";
+        $result .= "<source src=\"" . $vfile . "\"  type=\"" . _video_mimetype($vfile) . "\" />\n";
     };
     $result .= '
      <!-- fallback to Flash: -->
@@ -103,7 +141,7 @@ function qvideo_expand($matches) {
         <ul>
     ';
     foreach ($htmlfiles as $vfile) {
-        $result .= '<li><a href="' . $vfile . '">' . video_mimetype($vfile) . "</a></li>\n";
+        $result .= '<li><a href="' . $vfile . '">' . _video_mimetype($vfile) . "</a></li>\n";
     };
 
     $result .="</ul>\n";
