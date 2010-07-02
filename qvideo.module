@@ -63,33 +63,38 @@ function video_mimetype($path) {
 }
 
 function qvideo_expand($matches) {
+    if (count($matches) < 5) {
+        return "<b>Invalid syntax for qvideo tag</b>";
+    }
     $width = $matches[1];
     $height = $matches[2];
     $poster = $matches[3];
     $files = split(" ", $matches[4]);
     $numfiles = count($files);
+    if ($numfiles < 2) {
+        return "<b>Need to specify at least one video plus one flash file for qvideo tag</b>";
+    }
     $htmlfiles = array_slice($files, 0, -1);
     $flashfile = $files[$numfiles-1];
     $flashplayer = '/files/flvplayer.swf';
-        
-    $result = "
-    <video width=\"$width\" height=\"$height\" controls preload=\"none\">
-	    <!-- MP4 must be first for iPad! -->
-	";
+    
+    $isiPad = (bool) strpos($_SERVER['HTTP_USER_AGENT'],'iPad');
+    
+    $result = "<video width=\"$width\" height=\"$height\" controls preload=\"none\" ";
+    // Early iPad OS has a bug if poster is included
+    if (! $isiPad) $result .= "poster=\"$poster\"";
+    $result .= '>';
     foreach ($htmlfiles as $vfile) {
         
         $result .= "<source src=\"" . $vfile . "\"  type=\"" . video_mimetype($vfile) . "\" />\n";
     };
     $result .= '
      <!-- fallback to Flash: -->
-     <object width="' . $width . '" height="' . (string)($height + 24) . '" type="application/x-shockwave-flash" data="' . $flashplayer . '">
-      <!-- Firefox uses the `data` attribute above, IE/Safari uses the param below -->
-      <param name="movie" value="' . $flashfile .'" />
-      <param name="flashvars" value="image=' . $poster . '&amp;file='. $flashfile .'" />
-      <!-- fallback image. note the title field below, put the title of the video there -->
-      <img src="' .$poster .'" width="' . $width . '" height="' . $height . '" alt="Fallback options"
-           title="No video playback capabilities, please download the video below" />
-     </object>
+     <embed width="' . $width . '" height="' . (string)($height + 24) . '"
+      src="' . $flashplayer . '"
+      flashvars="image=' . $poster . '&file='. $flashfile .'" 
+      allowfullscreen="true"
+      />
     </video>
     ';
     $result .='
