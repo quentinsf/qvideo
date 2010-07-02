@@ -1,5 +1,9 @@
 <?php 
-// An input filter which expands the [qvideo] tag into appropriate code
+/*
+ * An input filter which expands the [qvideo] tag into appropriate code for embedding HTML5 video with a flash player fallback.
+ * Copyright (c) J.Q.Stafford-Fraser 2010
+ * Released under the GNU General Public License as explained in LICENSE.txt.
+ */
 
 /*
  * Implementation of hook_help().
