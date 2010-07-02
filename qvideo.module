@@ -87,15 +87,22 @@ function _qvideo_settings() {
     '#title' => t('Qvideo filter'),
     '#collapsible' => TRUE,
   );
-  $form['filter_qvideo']["flash_player_location"] = array(
+  $form['filter_qvideo']["qvideo_flash_player_location"] = array(
     '#type' => 'textfield',
     '#title' => t('Location of the core JW Player'),
-    '#default_value' => variable_get("flash_player_location", '/files/flvplayer.swf'),
+    '#default_value' => variable_get("qvideo_flash_player_location", '/files/flvplayer.swf'),
     '#size' => 64,
     '#maxlength' => 1024,
     '#description' => t(
         'JW Player can be downloaded from http://www.longtailvideo.com, and the core of it is a single file called flvplayer.swf.
         Where can this be found on your site?'),
+  );
+
+  $form['filter_qvideo']["qvideo_offer_downloads"] = array(
+    '#type' => 'checkbox',
+    '#description' => t("An alternative is to use the 'list' option on file attachments"),
+    '#title' => t('Provide download links for non-Flash videos'),
+    '#default_value' => variable_get("qvideo_offer_downloads", 1),
   );
   return $form;
 }
@@ -114,7 +121,7 @@ function qvideo_expand($matches) {
     }
     $htmlfiles = array_slice($files, 0, -1);
     $flashfile = $files[$numfiles-1];
-    $flashplayer = variable_get("flash_player_location", '/files/flvplayer.swf');
+    $flashplayer = variable_get("qvideo_flash_player_location", '/files/flvplayer.swf');
     
     $isiPad = (bool) strpos($_SERVER['HTTP_USER_AGENT'],'iPad');
     
@@ -135,15 +142,17 @@ function qvideo_expand($matches) {
       />
     </video>
     ';
-    $result .='
-      <!-- you *must* offer a download link as they may be able to play the file locally. customise this bit all you want -->
-        <p>  <strong>Download Video:</strong>
-        <ul>
-    ';
-    foreach ($htmlfiles as $vfile) {
-        $result .= '<li><a href="' . $vfile . '">' . _video_mimetype($vfile) . "</a></li>\n";
-    };
+    print variable_get("qvideo_offer_downloads", 1);
+    if ((bool) variable_get("qvideo_offer_downloads", 1)) {
+        $result .='
+            <p>  <strong>Download Video:</strong>
+            <ul>
+        ';
+        foreach ($htmlfiles as $vfile) {
+            $result .= '<li><a href="' . $vfile . '">' . _video_mimetype($vfile) . "</a></li>\n";
+        };
 
-    $result .="</ul>\n";
+        $result .="</ul>\n";
+    }
     return $result;
 }
