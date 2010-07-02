@@ -27,7 +27,7 @@ function qvideo_filter_tips($delta, $format, $long=FALSE) {
           
           [qvideo 640 480 /files/videoposter.jpg /files/video.mp4 /files/video.ogv /files/video.flv]<br/><br/>
           
-          At present the module assumes you are using the JW PLayer from http://www.longtailvideo.com.  
+          At present the module works with the JW PLayer from http://www.longtailvideo.com, or Flowplayer from http://flowplayer.org.  
           You can specify, in the configuration of the input format, where this can be found on your site.
           ");
     } else {
@@ -89,13 +89,14 @@ function _qvideo_settings() {
   );
   $form['filter_qvideo']["qvideo_flash_player_location"] = array(
     '#type' => 'textfield',
-    '#title' => t('Location of the core JW Player'),
+    '#title' => t('Location of the core JW Player or Flowplayer'),
     '#default_value' => variable_get("qvideo_flash_player_location", '/files/flvplayer.swf'),
     '#size' => 64,
     '#maxlength' => 1024,
     '#description' => t(
         'JW Player can be downloaded from http://www.longtailvideo.com, and the core of it is a single file called flvplayer.swf.
-        Where can this be found on your site?'),
+        Flowplayer can be found at http://flowplayer.org, and the core file is called something like flowplayer-3.2.2.swf.
+        Where can one of these be found on your site?'),
   );
 
   $form['filter_qvideo']["qvideo_offer_downloads"] = array(
@@ -133,11 +134,14 @@ function qvideo_expand($matches) {
         
         $result .= "<source src=\"" . $vfile . "\"  type=\"" . _video_mimetype($vfile) . "\" />\n";
     };
+    // Flashvars to make flowplayer work too
+    $fpflashvars = '&config={\'clip\':{\'url\':\''. $flashfile .'\', \'autoPlay\':false, \'autoBuffering\': true}}';
+    
     $result .= '
      <!-- fallback to Flash: -->
      <embed width="' . $width . '" height="' . (string)($height + 24) . '"
       src="' . $flashplayer . '"
-      flashvars="image=' . $poster . '&file='. $flashfile .'" 
+      flashvars="image=' . $poster . '&file='. $flashfile . $fpflashvars .'" 
       allowfullscreen="true"
       />
     </video>
