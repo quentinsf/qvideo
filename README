@@ -1,0 +1,1 @@
+An input filter which expands the [qvideo] tag into appropriate code for embedding HTML5 video with a flash player fallback.
