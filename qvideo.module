@@ -52,7 +52,7 @@ function qvideo_filter($op, $delta = 0, $format = -1, $text = ''){
             break;
         case 'no cache':
             // It's OK to cache this filter's output
-            return TRUE;
+            return FALSE;
         case 'prepare':
             // No preparation yet
             return $text;
