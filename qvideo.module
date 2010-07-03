@@ -76,6 +76,7 @@ function _video_mimetype($path) {
         "ogv" =>   "video/ogg",
         "flv" =>   "video/x-flv",
         "m4v" =>   "video/x-m4v",
+	"webm" =>  "video/webm"
         );
     $ext = pathinfo($path, PATHINFO_EXTENSION);
     $mtype = "";
